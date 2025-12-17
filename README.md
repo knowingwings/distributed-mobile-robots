@@ -19,7 +19,7 @@ Active Development
 **Current milestones:**
 - Repository structure created
 - Algorithm validation complete (Python simulation)
-- Rover mechanical design (completion: Dec 21, 2024)
+- Rover mechanical design (est completion: Mid Jan 2026 - Mid Feb 2026)
 - ROS2 navigation stack (planned: Week 1-2)
 - Auction algorithm ROS2 port (planned: Week 3-4)
 - Multi-robot coordination (planned: Week 5+)
