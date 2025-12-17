@@ -1,0 +1,40 @@
+# ROS2
+ros2_ws/build/
+ros2_ws/install/
+ros2_ws/log/
+.colcon/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+venv/
+.venv/
+
+# C++
+*.o
+*.a
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Gazebo
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Results
+results/
+*.bag
+*.db3
+
+# CAD
+*.stl.1
+*.f3d.lock
