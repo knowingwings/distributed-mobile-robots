@@ -1,16 +1,16 @@
 # Distributed Mobile Robots: ROS2 Implementation
 
-ROS2-based platform for researching decentralized coordination in multi-robot systems. This repository integrates validated distributed auction algorithms with custom rover hardware to enable research in autonomous task allocation and collaborative robotics.
+ROS2-based platform for researching decentralised coordination in multi-robot systems. This repository integrates validated distributed auction algorithms with custom rover hardware to enable research in autonomous task allocation and collaborative robotics.
 
 ## Overview
 
 This project combines:
-- **Validated coordination algorithms** from [decentralized-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator)
+- **Validated coordination algorithms** from [decentralised-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator)
 - **Custom rover platform** designed for multi-robot coordination research
 - **Complete ROS2 stack** for navigation, control, and coordination
 - **Gazebo simulation** to hardware deployment pipeline
 
-The system enables research in decentralized multi-robot task allocation with real hardware validation.
+The system enables research in decentralised multi-robot task allocation with real hardware validation.
 
 ## Project Status
 
@@ -76,17 +76,17 @@ source install/setup.bash
 
 ## Research Foundation
 
-This implementation is based on validated algorithms from [decentralized-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator):
+This implementation is based on validated algorithms from [decentralised-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator):
 
 **Distributed Auction Algorithm:**
-- Decentralized task allocation without central coordinator
+- Decentralised task allocation without central coordinator
 - Mathematical guarantees: O(K² · b_max/ε) convergence, ≤ 2ε optimality gap
 - GPU-accelerated bid calculation in simulation
 - Robust failure recovery with time-weighted consensus
 
 **Key Publications:**
 - Zavlanos, M.M., et al. (2008). Distributed auction algorithm for the assignment problem
-- BEng Dissertation: Decentralized Control Architecture for Dual Mobile Manipulators (First Class Honours)
+- BEng Dissertation: Decentralised Control Architecture for Dual Mobile Manipulators (First Class Honours)
 
 ## Development Roadmap
 
@@ -116,7 +116,7 @@ This implementation is based on validated algorithms from [decentralized-mobile-
 
 ## Related Projects
 
-- **[decentralized-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator)** - Python/PyTorch simulation and algorithm validation
+- **[decentralised-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator)** - Python/PyTorch simulation and algorithm validation
 - **[open-source-rover](https://github.com/knowingwings/open-source-rover)** - Rover mechanical design
 
 ## License
@@ -134,4 +134,4 @@ BEng Mechatronics (First Class Honours) @ University of Gloucestershire
 
 ---
 
-Research platform for decentralized multi-robot coordination.
+Research platform for decentralised multi-robot coordination.
