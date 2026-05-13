@@ -90,26 +90,26 @@ This implementation is based on validated algorithms from [decentralised-mobile-
 
 ## Development Roadmap
 
-### Phase 1: Foundation (Week 1-2) - In Progress
+### Phase 1: Foundation (Week 1-3) - In Progress
 - [x] Repository structure
 - [x] Algorithm validation (Python simulation)
 - [ ] Rover URDF and mechanical design
 - [ ] Basic Gazebo simulation
 - [ ] Single rover navigation stack
 
-### Phase 2: ROS2 Algorithm Port (Week 3-4)
+### Phase 2: ROS2 Algorithm Port (Week 4-5)
 - [ ] Auction node implementation
 - [ ] Task coordinator node
 - [ ] Consensus protocol
 - [ ] Message/service definitions
 
-### Phase 3: Multi-Robot Coordination (Week 5-6)
+### Phase 3: Multi-Robot Coordination (Week 6-7)
 - [ ] Dual-rover Gazebo world
 - [ ] Multi-robot communication
 - [ ] Coordinated task allocation
 - [ ] Performance benchmarking
 
-### Phase 4: Validation & Documentation (Week 7-8)
+### Phase 4: Validation & Documentation (Week 8-9)
 - [ ] Compare with Python simulation results
 - [ ] Video demonstrations
 - [ ] Comprehensive documentation
