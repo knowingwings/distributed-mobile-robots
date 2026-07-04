@@ -1,0 +1,12 @@
+# Interactive dev container (odin or terra):
+#   docker compose -f docker/compose.yml run --rm dev
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dev
+    image: dmr-dev:humble
+    volumes:
+      - ..:/ws
+    working_dir: /ws
+    command: bash

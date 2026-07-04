@@ -1,0 +1,14 @@
+FROM ros:humble
+
+# Test tooling for auction_core (pytest/hypothesis) and ROS launch testing.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3-pip \
+        python3-pytest \
+        python3-numpy \
+        python3-scipy \
+        ros-humble-launch-testing \
+        ros-humble-launch-testing-ros \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --no-cache-dir hypothesis
+
+WORKDIR /ws
