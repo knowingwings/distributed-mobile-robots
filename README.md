@@ -106,10 +106,19 @@ terra, where heavy compute belongs.
 - [x] Multi-node integration tests: happy path, coordinator kill,
       worker kill, runtime task injection
 
-### Phase 3 — simulation & hardware
-- [ ] Gazebo world (pairing decided at phase start) and rover integration
-- [ ] SSI-style allocator behind the same interface; head-to-head benchmark
-- [ ] Collaborative (multi-robot) task allocation design
+### Phase 3 — research (this branch)
+- [x] SSI allocator (min-makespan + sum-cost bid rules) behind the same
+      interface, distributed winner selection with honest message accounting
+- [x] Collaborative tasks end-to-end in sim: leader-follower recruitment,
+      synchronised execution, leader/follower failure recovery
+- [x] Head-to-head benchmark (see `results/allocator-comparison.md`):
+      rounds match SSI on quality, win at scale and under loss (×5 fewer
+      messages at 30% loss); collaboration overhead quantified
+
+### Phase 4 — simulation & hardware
+- [ ] Gazebo (Humble + Harmonic) world, Nav2 executor replacing the mock
+- [ ] Collaborative execution over ROS
+- [ ] Rover hardware integration
 
 ## Research foundation
 
