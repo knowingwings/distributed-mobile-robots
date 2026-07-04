@@ -36,6 +36,9 @@ class AllocationResult:
     # Tasks this allocator cannot handle (v1: collaborative ones), plus any
     # tasks blocked behind them in the DAG. Reported, never silently dropped.
     unallocated: dict[TaskId, str] = field(default_factory=dict)
+    # Communication ticks spent allocating (benchmark metric; 0 where the
+    # allocator's host, not the allocator, owns the clock).
+    allocation_ticks: int = 0
 
 
 class Allocator(ABC):
