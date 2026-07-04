@@ -24,7 +24,7 @@ echo "== image ready =="
 
 docker run --rm -v "$PWD:/ws" -w /ws dmr-dev:humble bash -lc '
     set -euo pipefail
-    pip3 install -q -e "auction_core[dev]" 2>/dev/null
+    pip3 install -q -e "auction_core[dev]"
     echo "== core tests (in container) =="
     python3 -m pytest auction_core/tests -q
     if [ -d ros2_ws/src ] && [ -n "$(ls -A ros2_ws/src 2>/dev/null)" ]; then
