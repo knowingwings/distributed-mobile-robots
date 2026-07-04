@@ -1,0 +1,10 @@
+# Demo mission: the phase-1 demo.py scenario (8 tasks, DAG dependencies).
+tasks:
+  - {id: 0, position: [1.0, 1.0], duration: 6.0}
+  - {id: 1, position: [3.0, 1.0], duration: 5.0}
+  - {id: 2, position: [2.0, 2.0], duration: 8.0}
+  - {id: 3, position: [0.5, 3.0], duration: 5.5, prerequisites: [0]}
+  - {id: 4, position: [3.5, 3.0], duration: 7.0, prerequisites: [1]}
+  - {id: 5, position: [2.0, 0.5], duration: 6.0, prerequisites: [1, 2]}
+  - {id: 6, position: [1.5, 3.5], duration: 5.0, prerequisites: [3]}
+  - {id: 7, position: [3.0, 3.5], duration: 9.0, prerequisites: [4, 5]}
