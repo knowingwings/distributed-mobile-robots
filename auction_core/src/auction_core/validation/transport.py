@@ -103,14 +103,20 @@ class SimTransport:
 
     def send(self, message: PriceTableMessage, now: int) -> None:
         """Broadcast to the sender's current neighbours."""
-        neighbours = self._topology_fn(now).get(message.sender, frozenset())
+        self.send_payload(message, message.sender, now)
+
+    def send_payload(self, payload, sender: AgentId, now: int) -> None:
+        """Broadcast an arbitrary message from `sender` to its neighbours
+        (coordination messages carry their origin under different field
+        names, so the sender is explicit here)."""
+        neighbours = self._topology_fn(now).get(sender, frozenset())
         for dest in neighbours:
             self.messages_sent += 1
             if self._rng.random() < self._loss:
                 continue
             delay = self._delay(self._rng) if callable(self._delay) else self._delay
             deliver_at = now + 1 + max(0, delay)
-            heapq.heappush(self._queue, (deliver_at, next(self._seq), dest, message))
+            heapq.heappush(self._queue, (deliver_at, next(self._seq), dest, payload))
 
     def deliver_due(self, now: int) -> list[tuple[AgentId, PriceTableMessage]]:
         due = []
