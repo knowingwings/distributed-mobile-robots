@@ -32,7 +32,9 @@ docker run --rm -v "$PWD:/ws" -w /ws dmr-dev:humble bash -lc '
     if [ -d ros2_ws/src ] && [ -n "$(ls -A ros2_ws/src 2>/dev/null)" ]; then
         echo "== colcon build =="
         cd ros2_ws
+        set +u  # ROS setup scripts are not nounset-clean
         . /opt/ros/humble/setup.sh
+        set -u
         colcon build --symlink-install --event-handlers console_cohesion+
         echo "== colcon test =="
         colcon test --event-handlers console_cohesion+
