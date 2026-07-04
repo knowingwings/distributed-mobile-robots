@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-launch-testing \
         ros-humble-launch-testing-ros \
     && rm -rf /var/lib/apt/lists/* \
-    # setuptools >= 64 needed for PEP 660 editable install of auction_core
-    && pip3 install --no-cache-dir -U pip setuptools \
+    # setuptools >= 64 for PEP 660 editable install of auction_core, but
+    # < 66 so rosidl's egg build still matches Humble's packaging module
+    && pip3 install --no-cache-dir -U pip "setuptools==65.7.0" \
     && pip3 install --no-cache-dir hypothesis
 
 WORKDIR /ws
