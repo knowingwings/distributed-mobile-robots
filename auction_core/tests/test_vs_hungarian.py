@@ -57,7 +57,7 @@ def instances(draw, integer_benefits=False):
 def run(benefits, topology, delay, loss, seed, epsilon):
     config = RoundConfig(
         epsilon=epsilon,
-        quiescence_rounds=suggested_quiescence(topology, delay),
+        quiescence_rounds=suggested_quiescence(topology, delay, loss_prob=loss),
     )
     transport = SimTransport(
         topology, delay_ticks=delay, loss_prob=loss, seed=seed

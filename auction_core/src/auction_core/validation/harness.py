@@ -13,6 +13,7 @@ modes, so here they raise.
 
 from __future__ import annotations
 
+import math
 from typing import Mapping, Optional
 
 from ..types import AgentId, PriceEntry, RoundConfig, RoundResult, TaskId
@@ -28,10 +29,31 @@ class InconsistentAssignment(RuntimeError):
     pass
 
 
-def suggested_quiescence(topology: Topology, max_delay_ticks: int) -> int:
-    """Quiescence window that provably outlasts one full propagation across
-    the network: diameter hops, each taking at most 1 + max_delay ticks."""
-    return diameter(topology) * (1 + max_delay_ticks) + 1
+def suggested_quiescence(
+    topology: Topology,
+    max_delay_ticks: int,
+    loss_prob: float = 0.0,
+    failure_odds: float = 1e-9,
+) -> int:
+    """Quiescence window sized for the communication environment.
+
+    Lossless: diameter hops, each taking at most 1 + max_delay ticks — a
+    window that provably outlasts one full propagation.
+
+    With Bernoulli loss, silent-termination agreement is inherently
+    probabilistic (two-generals): a conflicting claim survives only if every
+    broadcast on the critical link is lost for the whole window, i.e. with
+    probability loss^Q. The window is scaled so that chance is below
+    failure_odds; the harness's consistency check still raises if the
+    improbable happens. Deterministic termination under loss needs
+    acknowledgements — that is the phase-2 liveness layer's job, not the
+    auction's.
+    """
+    base = diameter(topology) * (1 + max_delay_ticks) + 1
+    if loss_prob <= 0.0:
+        return base
+    retries = math.ceil(math.log(failure_odds) / math.log(loss_prob))
+    return base * max(1, retries)
 
 
 def run_round(
@@ -68,6 +90,12 @@ def run_round(
                 f"(n={len(agents)}, m={len(task_ids)}, eps={config.epsilon})"
             )
         for dest, message in transport.deliver_due(tick):
+            if dest not in agents:
+                raise ValueError(
+                    f"transport delivered to agent {dest}, which is not in "
+                    f"this round — build the topology over the round's "
+                    f"participants ({sorted(agents)})"
+                )
             agents[dest].handle_message(message)
         for agent in agents.values():
             for message in agent.tick():

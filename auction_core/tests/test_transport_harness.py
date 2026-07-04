@@ -20,10 +20,10 @@ from auction_core.validation.transport import (
 from auction_core.validation.harness import run_round, suggested_quiescence
 
 
-def cfg(topology, max_delay=0, epsilon=0.01):
+def cfg(topology, max_delay=0, epsilon=0.01, loss=0.0):
     return RoundConfig(
         epsilon=epsilon,
-        quiescence_rounds=suggested_quiescence(topology, max_delay),
+        quiescence_rounds=suggested_quiescence(topology, max_delay, loss_prob=loss),
     )
 
 
@@ -95,7 +95,7 @@ def test_converges_under_loss(loss):
     result = run_round(
         BENEFITS_4,
         SimTransport(topo, loss_prob=loss, seed=42),
-        cfg(topo),
+        cfg(topo, loss=loss),
     )
     assert result.assignment == OPTIMAL_4
 
