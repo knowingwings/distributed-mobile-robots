@@ -1,3 +1,3 @@
-# Price gossip scoped to a round (auction_core.coordination.messages.RoundGossip).
-int64 round_id
+# Price gossip scoped to one auction (coordinator round or recruitment).
+string scope
 auction_msgs/PriceTable table

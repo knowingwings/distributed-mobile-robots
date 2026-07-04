@@ -10,6 +10,7 @@ from __future__ import annotations
 from auction_core.coordination.messages import (
     Heartbeat,
     LeaseRenewal,
+    RecruitAnnouncement,
     RoundAnnouncement,
     RoundGossip,
     TaskCompleted,
@@ -23,7 +24,10 @@ import auction_msgs.msg as m
 
 
 def heartbeat_to_core(msg: m.Heartbeat) -> Heartbeat:
-    return Heartbeat(sender=msg.sender, stamp=msg.stamp, idle=msg.idle)
+    return Heartbeat(
+        sender=msg.sender, stamp=msg.stamp, idle=msg.idle,
+        position=tuple(msg.position),
+    )
 
 
 def announcement_to_core(msg: m.RoundAnnouncement) -> RoundAnnouncement:
@@ -43,13 +47,27 @@ def gossip_to_core(msg: m.RoundGossip) -> RoundGossip:
         e.task_id: PriceEntry(e.price, e.bidder) for e in msg.table.entries
     }
     return RoundGossip(
-        round_id=msg.round_id,
+        scope=msg.scope,
         inner=PriceTableMessage(sender=msg.table.sender, entries=entries),
     )
 
 
 def lease_to_core(msg: m.LeaseRenewal) -> LeaseRenewal:
-    return LeaseRenewal(task_id=msg.task_id, holder=msg.holder, stamp=msg.stamp)
+    return LeaseRenewal(
+        task_id=msg.task_id, holder=msg.holder, stamp=msg.stamp,
+        follower=msg.follower,
+    )
+
+
+def recruit_to_core(msg: m.RecruitAnnouncement) -> RecruitAnnouncement:
+    return RecruitAnnouncement(
+        leader=msg.leader,
+        task_id=msg.task_id,
+        seq=msg.seq,
+        participants=tuple(msg.participants),
+        epsilon=msg.epsilon,
+        quiescence_rounds=msg.quiescence_rounds,
+    )
 
 
 def completed_to_core(msg: m.TaskCompleted) -> TaskCompleted:
@@ -71,7 +89,10 @@ def task_to_core(msg: m.TaskSpec) -> Task:
 
 
 def heartbeat_to_msg(hb: Heartbeat) -> m.Heartbeat:
-    return m.Heartbeat(sender=hb.sender, stamp=hb.stamp, idle=hb.idle)
+    return m.Heartbeat(
+        sender=hb.sender, stamp=hb.stamp, idle=hb.idle,
+        position=list(hb.position),
+    )
 
 
 def announcement_to_msg(a: RoundAnnouncement) -> m.RoundAnnouncement:
@@ -88,7 +109,7 @@ def announcement_to_msg(a: RoundAnnouncement) -> m.RoundAnnouncement:
 
 def gossip_to_msg(g: RoundGossip) -> m.RoundGossip:
     return m.RoundGossip(
-        round_id=g.round_id,
+        scope=g.scope,
         table=m.PriceTable(
             sender=g.inner.sender,
             entries=[
@@ -100,7 +121,20 @@ def gossip_to_msg(g: RoundGossip) -> m.RoundGossip:
 
 
 def lease_to_msg(l: LeaseRenewal) -> m.LeaseRenewal:
-    return m.LeaseRenewal(task_id=l.task_id, holder=l.holder, stamp=l.stamp)
+    return m.LeaseRenewal(
+        task_id=l.task_id, holder=l.holder, stamp=l.stamp, follower=l.follower
+    )
+
+
+def recruit_to_msg(r: RecruitAnnouncement) -> m.RecruitAnnouncement:
+    return m.RecruitAnnouncement(
+        leader=r.leader,
+        task_id=r.task_id,
+        seq=r.seq,
+        participants=list(r.participants),
+        epsilon=r.epsilon,
+        quiescence_rounds=r.quiescence_rounds,
+    )
 
 
 def completed_to_msg(c: TaskCompleted) -> m.TaskCompleted:

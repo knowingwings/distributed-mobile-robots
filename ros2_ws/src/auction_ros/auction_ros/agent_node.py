@@ -31,6 +31,7 @@ from rclpy.qos import (
 from auction_core.coordination.messages import (
     Heartbeat,
     LeaseRenewal,
+    RecruitAnnouncement,
     RoundAnnouncement,
     RoundGossip,
     TaskCompleted,
@@ -79,6 +80,7 @@ class AgentNode(Node):
             RoundGossip: self.create_publisher(m.RoundGossip, "auction/gossip", GOSSIP_QOS),
             LeaseRenewal: self.create_publisher(m.LeaseRenewal, "auction/lease", GOSSIP_QOS),
             TaskCompleted: self.create_publisher(m.TaskCompleted, "auction/completed", GOSSIP_QOS),
+            RecruitAnnouncement: self.create_publisher(m.RecruitAnnouncement, "auction/recruit", GOSSIP_QOS),
         }
         self._to_msg = {
             Heartbeat: conv.heartbeat_to_msg,
@@ -86,6 +88,7 @@ class AgentNode(Node):
             RoundGossip: conv.gossip_to_msg,
             LeaseRenewal: conv.lease_to_msg,
             TaskCompleted: conv.completed_to_msg,
+            RecruitAnnouncement: conv.recruit_to_msg,
         }
 
         self.create_subscription(
@@ -103,6 +106,9 @@ class AgentNode(Node):
         self.create_subscription(
             m.TaskCompleted, "auction/completed",
             self._make_handler(conv.completed_to_core), GOSSIP_QOS)
+        self.create_subscription(
+            m.RecruitAnnouncement, "auction/recruit",
+            self._make_handler(conv.recruit_to_core), GOSSIP_QOS)
         self.create_subscription(
             m.TaskArray, "auction/tasks", self._on_task_array, MISSION_QOS)
 
@@ -143,12 +149,13 @@ class AgentNode(Node):
         for core_msg in self.participant.tick(now):
             self._publish(core_msg)
 
-        for task_id in self.participant.pop_aborts():
-            self.get_logger().warning(f"aborting task {task_id} (lost lease)")
+        for dispatch in self.participant.pop_aborts():
+            self.get_logger().warning(
+                f"aborting task {dispatch.task_id} ({dispatch.role}, lost claim)")
             self._cancel_execution()
 
-        for task_id in self.participant.pop_dispatches():
-            self._start_execution(task_id, now)
+        for dispatch in self.participant.pop_dispatches():
+            self._start_execution(dispatch, now)
 
         if self.participant.mission_complete and not self._mission_logged:
             self._mission_logged = True
@@ -156,7 +163,14 @@ class AgentNode(Node):
 
     # -------------------------------------------------------- mock execution
 
-    def _start_execution(self, task_id, now: float) -> None:
+    def _start_execution(self, dispatch, now: float) -> None:
+        # Phase-3 mock: followers run no timer of their own — the leader's
+        # TaskCompleted clears them (full collab-over-ROS lands with Gazebo).
+        if dispatch.role == "follower":
+            self.get_logger().info(
+                f"following task {dispatch.task_id} (leader {dispatch.partner})")
+            return
+        task_id = dispatch.task_id
         task = self.participant.tasks[task_id]
         travel = (
             _distance(self.participant.me.position, task.position)
