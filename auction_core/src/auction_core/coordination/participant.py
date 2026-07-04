@@ -212,9 +212,16 @@ class CoordinationParticipant:
         self._max_round_seen = max(self._max_round_seen, msg.round_id)
         self._round_opened_at = now
         scope = round_scope(msg.coordinator, msg.round_id)
-        # A newer coordinator round pre-empts bidding, but never an active
-        # execution or an in-flight recruitment we lead.
-        if self.me.id in msg.participants and self._can_bid():
+        # A newer coordinator round pre-empts bidding in an older coordinator
+        # round — but never an execution, a recruitment we lead, or a
+        # recruitment we are BIDDING in (pre-empting a recruitment bid left
+        # the leader paired with a robot that no longer knew it had bid).
+        bidding_recruitment = (
+            self._agent is not None
+            and self._agent_scope is not None
+            and self._agent_scope.startswith("l")
+        )
+        if self.me.id in msg.participants and self._can_bid() and not bidding_recruitment:
             self._agent = AuctionAgent(
                 self.me.id,
                 self._benefit_row(msg.task_ids, msg.idle_slots),
@@ -328,12 +335,33 @@ class CoordinationParticipant:
             self.leases.grant(msg.task_id, msg.holder, now)
 
         # Follower pairing: the leader names its follower in the renewal.
-        if msg.follower == self.me.id and self._pending_follow is not None:
+        if msg.follower != self.me.id or msg.holder == self.me.id:
+            return
+        if self._pending_follow is not None:
             task_id, leader, _ = self._pending_follow
             if msg.task_id == task_id and msg.holder == leader:
                 self._pending_follow = None
-                self.dispatch = Dispatch(task_id, "follower", leader)
-                self._dispatches.append(self.dispatch)
+                self._accept_follow(task_id, leader)
+        elif msg.task_id in self.tasks and self._can_bid():
+            # No local pending state, but the leader picked us from converged
+            # auction prices — our bid implies willingness. This heals races
+            # where our recruitment agent was superseded or the pending
+            # window expired; renewals repeat at heartbeat cadence, so the
+            # pairing lands once we are free.
+            latest = self._latest_recruit.get(msg.task_id)
+            recruit_scope_ok = (
+                self._agent is None
+                or (latest is not None and self._agent_scope == latest.scope)
+            )
+            if recruit_scope_ok:
+                self._accept_follow(msg.task_id, msg.holder)
+
+    def _accept_follow(self, task_id: TaskId, leader: AgentId) -> None:
+        if self._agent_scope is not None and self._agent_scope.startswith("l"):
+            self._agent = None  # we got the job; stop bidding for it
+            self._agent_scope = None
+        self.dispatch = Dispatch(task_id, "follower", leader)
+        self._dispatches.append(self.dispatch)
 
     def _on_completed(self, msg: TaskCompleted) -> None:
         self.completed.setdefault(msg.task_id, msg.by)
@@ -555,6 +583,15 @@ class CoordinationParticipant:
         available = sorted(self._available_tasks(allow_collab=len(idle) >= 2))
         if not available or not idle:
             return []
+        # Collaborations are framed ONE per round, alone: if several were
+        # framed together, two robots can each win one, both become leaders,
+        # and each waits forever for the other as follower (mutual-leader
+        # livelock — found by the benchmark's collab suite). Framing a single
+        # collab with every idle robot participating guarantees the sentinel
+        # winners stay idle and recruitable.
+        collabs = [t for t in available if self.tasks[t].collaborative]
+        if collabs:
+            available = [min(collabs)]
 
         announcement = RoundAnnouncement(
             round_id=self._max_round_seen + 1,
