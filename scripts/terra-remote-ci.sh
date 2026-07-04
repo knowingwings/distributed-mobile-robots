@@ -4,6 +4,14 @@
 set -euo pipefail
 
 BRANCH="${1:?usage: terra-remote-ci.sh <branch>}"
+
+# Docker Desktop's Windows credential helper is unreachable from a non-
+# interactive SSH session ("logon session does not exist"); use a bare
+# config — the images we pull are public.
+export DOCKER_CONFIG="$HOME/.docker-ci"
+mkdir -p "$DOCKER_CONFIG"
+echo '{}' > "$DOCKER_CONFIG/config.json"
+
 cd ~/auction-run
 
 git fetch -q origin "$BRANCH"
