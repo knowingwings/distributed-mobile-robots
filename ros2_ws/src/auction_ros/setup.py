@@ -15,6 +15,7 @@ setup(
         ("share/" + package_name + "/config", glob("config/*.yaml")),
     ],
     install_requires=["setuptools"],
+    tests_require=["pytest"],  # colcon runs pytest (not setup.py test) with this
     zip_safe=True,
     maintainer="Tom Le Huray",
     maintainer_email="technical.wanderer@gmail.com",
