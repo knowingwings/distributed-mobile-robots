@@ -1,137 +1,107 @@
-# Distributed Mobile Robots: ROS2 Implementation
+# Distributed Mobile Robots
 
-ROS2-based platform for researching decentralised coordination in multi-robot systems. This repository integrates validated distributed auction algorithms with custom rover hardware to enable research in autonomous task allocation and collaborative robotics.
+Platform for researching decentralised coordination in multi-robot systems: a
+**platform-agnostic distributed auction core** (`auction_core`, pure Python,
+zero ROS dependencies) with a ROS 2 wrapper and rover integration to follow.
+Targets the [open-source-rover](https://github.com/knowingwings/open-source-rover)
+platform, with extension toward communication-constrained extreme environments
+(delay/disruption-tolerant coordination) as a long-term goal.
 
 ## Overview
 
-This project combines:
-- **Validated coordination algorithms** from [decentralised-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator)
-- **Custom rover platform** designed for multi-robot coordination research
-- **Complete ROS2 stack** for navigation, control, and coordination
-- **Gazebo simulation** to hardware deployment pipeline
+The core reimplements the distributed auction algorithm of Zavlanos, Spesivtsev
+& Pappas (2008) — an extension of Bertsekas' auction algorithm to networked
+systems with only local communication — correcting the specification defects
+found in the predecessor BEng-dissertation implementations (wrong price-update
+rule, missing outbidding, stability-based termination; see the maths
+evaluation in the project workspace).
 
-The system enables research in decentralised multi-robot task allocation with real hardware validation.
+Design principles:
 
-## Project Status
+- **Sans-I/O engine.** Each agent is a deterministic state machine
+  (`handle_message`/`tick`); time and transport are injected. The same engine
+  runs under pytest, a simulated lossy network, ROS 2, or store-and-forward.
+- **Max-merge price propagation.** Price tables reconcile by entry-wise
+  `max()` (max-price / max-index): associative, commutative, idempotent —
+  message loss, duplication, and reordering cannot corrupt auction state.
+- **Frozen benefits per round.** The auction solves the one-task-per-agent
+  assignment problem it has guarantees for; all adaptivity (workload,
+  distance, DAG availability) lives in the scheduling layer between rounds.
 
-Active Development
+Honest guarantee inventory (per round, n agents, minimum bid increment ε):
 
-**Current milestones:**
-- Repository structure created
-- Algorithm validation complete (Python simulation)
-- Rover mechanical design (planned: Week 1-3)
-- ROS2 navigation stack (planned: Week 4-5)
-- Auction algorithm ROS2 port (planned: Week 5-6)
-- Multi-robot coordination (planned: Week 7+)
+- Convergence: O(Δ · n² · ⌈range(β)/ε⌉) iterations, Δ = network diameter
+- Total benefit within **nε** of the optimal assignment (exact for integer
+  benefits with ε < 1/n) — verified against the Hungarian algorithm by
+  property-based tests under delay, loss, and multi-hop topologies
+- Makespan across rounds is reported against the CPM lower bound; **no
+  makespan-optimality claim is made** (none is inherited from the theory)
 
-## Repository Structure
+## Repository structure
 
 ```
 distributed-mobile-robots/
-├── ros2_ws/                        # ROS2 workspace
-│   └── src/
-│       ├── rover_description/      # URDF, meshes, robot models
-│       ├── rover_bringup/          # Launch files and configurations
-│       ├── rover_navigation/       # Nav2 integration
-│       ├── rover_control/          # Low-level control
-│       ├── auction_allocation/     # Distributed auction algorithm
-│       ├── task_coordinator/       # Task management and dependencies
-│       ├── consensus/              # Consensus protocol implementation
-│       └── simulation_worlds/      # Gazebo worlds and scenarios
-│
-├── docker/                         # Docker configurations
-├── docs/                           # Documentation
-├── scripts/                        # Utility scripts
-└── README.md                       # This file
+├── auction_core/                   # platform-agnostic core (this phase)
+│   ├── src/auction_core/
+│   │   ├── auction/                # Zavlanos Alg. 1 engine + price table
+│   │   ├── scheduling/             # task DAG, CPM, benefit definition
+│   │   ├── allocator/              # repeated frozen-β rounds (SSI later)
+│   │   └── validation/             # Hungarian reference, sim transport,
+│   │                               #   round harness, factorial experiments
+│   ├── tests/                      # unit + hypothesis property tests
+│   └── examples/demo.py
+└── ros2_ws/                        # ROS 2 Humble workspace (phase 2)
 ```
 
-## Quick Start
-
-### Prerequisites
-
-- Ubuntu 22.04 LTS
-- ROS2 Humble
-- Docker (optional, recommended)
-- Python 3.10+
-- Gazebo Garden
-
-### Installation
-
-**Option 1: Docker (Recommended)**
+## Quick start (auction core)
 
 ```bash
-git clone https://github.com/knowingwings/distributed-mobile-robots.git
-cd distributed-mobile-robots
-docker-compose -f docker/docker-compose.yml up
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e "auction_core[dev]"
+pytest auction_core/tests
+python auction_core/examples/demo.py
+python -m auction_core.validation.experiments --quick --out results/smoke.csv
 ```
 
-**Option 2: Native Installation**
+Requires Python ≥ 3.10 (ROS 2 Humble compatible). No ROS needed for this phase.
 
-```bash
-git clone https://github.com/knowingwings/distributed-mobile-robots.git
-cd distributed-mobile-robots/ros2_ws
-colcon build
-source install/setup.bash
-```
+## Roadmap
 
-## Research Foundation
+### Phase 1 — validated core (this branch)
+- [x] Auction engine with enforced invariants (price monotonicity, γ ≥ ε)
+- [x] Simulated transport: topology, delay, Bernoulli loss, partitions
+- [x] Property-based verification against Hungarian ground truth
+- [x] DAG/CPM scheduling layer + repeated-rounds allocator
+- [x] Factorial experiments (K, delay, loss, ε; fleet sizes 2/4/8)
 
-This implementation is based on validated algorithms from [decentralised-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator):
+### Phase 2 — ROS 2 integration
+- [ ] `auction_msgs` + thin per-robot lifecycle node
+- [ ] Lease-based liveness (heartbeat spec from the dissertation's App. B §6.1)
+- [ ] Recovery re-auction of orphaned tasks
+- [ ] Multi-node validation on a single machine
 
-**Distributed Auction Algorithm:**
-- Decentralised task allocation without central coordinator
-- Mathematical guarantees: O(K² · b_max/ε) convergence, ≤ 2ε optimality gap
-- GPU-accelerated bid calculation in simulation
-- Robust failure recovery with time-weighted consensus
+### Phase 3 — simulation & hardware
+- [ ] Gazebo world (pairing decided at phase start) and rover integration
+- [ ] SSI-style allocator behind the same interface; head-to-head benchmark
+- [ ] Collaborative (multi-robot) task allocation design
 
-**Key Publications:**
-- Zavlanos, M.M., et al. (2008). Distributed auction algorithm for the assignment problem
-- BEng Dissertation: Decentralised Control Architecture for Dual Mobile Manipulators (First Class Honours)
+## Research foundation
 
-## Development Roadmap
-
-### Phase 1: Foundation (Week 1-3) - In Progress
-- [x] Repository structure
-- [x] Algorithm validation (Python simulation)
-- [ ] Rover URDF and mechanical design
-- [ ] Basic Gazebo simulation
-- [ ] Single rover navigation stack
-
-### Phase 2: ROS2 Algorithm Port (Week 4-5)
-- [ ] Auction node implementation
-- [ ] Task coordinator node
-- [ ] Consensus protocol
-- [ ] Message/service definitions
-
-### Phase 3: Multi-Robot Coordination (Week 6-7)
-- [ ] Dual-rover Gazebo world
-- [ ] Multi-robot communication
-- [ ] Coordinated task allocation
-- [ ] Performance benchmarking
-
-### Phase 4: Validation & Documentation (Week 8-9)
-- [ ] Compare with Python simulation results
-- [ ] Video demonstrations
-- [ ] Comprehensive documentation
-
-## Related Projects
-
-- **[decentralised-mobile-manipulator](https://github.com/knowingwings/decentralized-mobile-manipulator)** - Python/PyTorch simulation and algorithm validation
-- **[open-source-rover](https://github.com/knowingwings/open-source-rover)** - Rover mechanical design
+- Zavlanos, M.M., Spesivtsev, L., Pappas, G.J. (2008). *A distributed auction
+  algorithm for the assignment problem.* IEEE CDC, 1212–1217.
+- Bertsekas, D.P. (1992). *Auction algorithms for network flow problems.*
+  Computational Optimization and Applications 1, 7–66.
+- BEng dissertation (Le Huray, 2025): problem formulation, dependency
+  management, and failure-detection specs are adopted; the auction mechanics
+  are corrected per the accompanying maths evaluation.
 
 ## License
 
-MIT License
+MIT
 
 ## Author
 
-**Thomas Le Huray**
-- GitHub: @knowingwings
-- LinkedIn: /in/tom-le-huray
+**Thomas Le Huray** — GitHub [@knowingwings](https://github.com/knowingwings)
 
-MSc Robotics and Autonomous Systems @ University of Bath  
+MSc Robotics and Autonomous Systems @ University of Bath
 BEng Mechatronics (First Class Honours) @ University of Gloucestershire
-
----
-
-Research platform for decentralised multi-robot coordination.
