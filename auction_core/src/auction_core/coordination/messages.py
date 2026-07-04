@@ -21,6 +21,7 @@ class Heartbeat:
     sender: AgentId
     stamp: float
     idle: bool  # advertises availability for round framing
+    position: tuple[float, ...] = ()  # for joint-estimate collaborative bids
 
 
 @dataclass(frozen=True)
@@ -46,11 +47,43 @@ class RoundAnnouncement:
 
 @dataclass(frozen=True)
 class RoundGossip:
-    """Auction price gossip scoped to one round — tables from different
-    rounds must never merge."""
+    """Auction price gossip scoped to one auction — tables from different
+    auctions must never merge. Coordinator rounds use scope "c<id>/r<n>",
+    recruitment rounds "l<leader>/t<task>/s<seq>" (independent id spaces,
+    so the scope is a string, not an int)."""
 
-    round_id: int
+    scope: str
     inner: PriceTableMessage
+
+
+def round_scope(coordinator: AgentId, round_id: int) -> str:
+    return f"c{coordinator}/r{round_id}"
+
+
+def recruit_scope(leader: AgentId, task_id: TaskId, seq: int) -> str:
+    return f"l{leader}/t{task_id}/s{seq}"
+
+
+@dataclass(frozen=True)
+class RecruitAnnouncement:
+    """A collaborative-task leader invites idle robots to a single-item
+    recruitment auction. Precedence per (task): later seq wins; equal seq
+    from different leaders resolves to the lease holder (participants only
+    honour announcements from the robot they believe holds the lease)."""
+
+    leader: AgentId
+    task_id: TaskId
+    seq: int
+    participants: tuple[AgentId, ...]
+    epsilon: float
+    quiescence_rounds: int
+
+    @property
+    def scope(self) -> str:
+        return recruit_scope(self.leader, self.task_id, self.seq)
+
+
+NO_FOLLOWER: AgentId = -1
 
 
 @dataclass(frozen=True)
@@ -58,6 +91,7 @@ class LeaseRenewal:
     task_id: TaskId
     holder: AgentId
     stamp: float
+    follower: AgentId = NO_FOLLOWER  # collaborative pairing, if any
 
 
 @dataclass(frozen=True)
@@ -77,6 +111,7 @@ CoordinationMessage = (
     Heartbeat
     | RoundAnnouncement
     | RoundGossip
+    | RecruitAnnouncement
     | LeaseRenewal
     | TaskCompleted
     | TaskInjected

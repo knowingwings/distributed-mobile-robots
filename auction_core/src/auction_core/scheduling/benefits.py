@@ -70,3 +70,25 @@ class BenefitModel:
         return {
             r.id: {t.id: self.benefit(r, t) for t in tasks} for r in robots
         }
+
+    def joint_benefit(
+        self,
+        me: RobotState,
+        task: Task,
+        others: dict[AgentId, tuple[float, ...]],
+    ) -> float:
+        """Bid estimate for a collaborative task: own benefit plus the best
+        follower's estimated benefit, from gossiped positions. An estimate,
+        not a guarantee — the actual follower is chosen by the recruitment
+        auction after winning. With no known others, falls back to the solo
+        benefit (the recruitment stage will then wait for a follower)."""
+        own = self.benefit(me, task)
+        follower_estimates = [
+            self.benefit(
+                RobotState(id=other_id, position=pos, capabilities=me.capabilities),
+                task,
+            )
+            for other_id, pos in others.items()
+            if other_id != me.id
+        ]
+        return own + (max(follower_estimates) if follower_estimates else 0.0)
