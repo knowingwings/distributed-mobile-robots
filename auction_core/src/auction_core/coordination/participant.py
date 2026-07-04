@@ -75,7 +75,7 @@ class CoordinationParticipant:
         self.round_timeout = round_timeout
 
         self.tasks: dict[TaskId, Task] = {}
-        self.completed: set[TaskId] = set()
+        self.completed: dict[TaskId, AgentId] = {}  # task -> original completer
         self.unsupported: dict[TaskId, str] = {}
         self.executing: Optional[TaskId] = None
 
@@ -104,7 +104,7 @@ class CoordinationParticipant:
 
     @property
     def mission_complete(self) -> bool:
-        return bool(self.tasks) and set(self.tasks) <= self.completed
+        return bool(self.tasks) and set(self.tasks) <= set(self.completed)
 
     def pop_dispatches(self) -> list[TaskId]:
         out, self._dispatches = self._dispatches, []
@@ -118,7 +118,7 @@ class CoordinationParticipant:
         """Host callback: execution of `task_id` finished successfully."""
         assert self.executing == task_id
         self.executing = None
-        self.completed.add(task_id)
+        self.completed[task_id] = self.me.id
         self.leases.release(task_id, self.me.id)
         self.me.workload += self.tasks[task_id].duration
         self.me.position = self.tasks[task_id].position or self.me.position
@@ -216,7 +216,7 @@ class CoordinationParticipant:
             self.leases.grant(msg.task_id, msg.holder, now)
 
     def _on_completed(self, msg: TaskCompleted) -> None:
-        self.completed.add(msg.task_id)
+        self.completed.setdefault(msg.task_id, msg.by)
         holder = self.leases.holder(msg.task_id)
         if holder is not None:
             self.leases.release(msg.task_id, holder)
@@ -287,8 +287,8 @@ class CoordinationParticipant:
         if self.executing is not None:
             self.leases.renew(self.executing, self.me.id, now)
             out.append(LeaseRenewal(self.executing, self.me.id, now))
-        for task_id in self.completed:
-            out.append(TaskCompleted(task_id, self.me.id, now))
+        for task_id, completer in self.completed.items():
+            out.append(TaskCompleted(task_id, completer, now))
         return out
 
     @property
@@ -347,7 +347,7 @@ class CoordinationParticipant:
         dag = TaskDag(self.tasks.values())
         return {
             tid
-            for tid in dag.available(self.completed & set(self.tasks))
+            for tid in dag.available(set(self.completed) & set(self.tasks))
             if self.leases.holder(tid) is None
         }
 
