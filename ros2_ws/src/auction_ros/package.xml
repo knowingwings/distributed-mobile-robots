@@ -7,7 +7,7 @@
     NOTE: requires the auction_core Python package (pip install -e auction_core
     from the repo root) — it is deliberately not a rosdep dependency.</description>
   <maintainer email="technical.wanderer@gmail.com">Tom Le Huray</maintainer>
-  <license>MIT</license>
+  <license>Apache-2.0</license>
 
   <depend>rclpy</depend>
   <depend>auction_msgs</depend>

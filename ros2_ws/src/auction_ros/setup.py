@@ -20,7 +20,7 @@ setup(
     maintainer="Tom Le Huray",
     maintainer_email="technical.wanderer@gmail.com",
     description="Thin ROS 2 wrapper hosting the auction_core coordination layer",
-    license="MIT",
+    license="Apache-2.0",
     entry_points={
         "console_scripts": [
             "agent_node = auction_ros.agent_node:main",

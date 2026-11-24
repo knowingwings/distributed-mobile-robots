@@ -6,7 +6,7 @@
   <description>Message definitions for the distributed auction coordination layer
     (mirror auction_core.coordination.messages 1:1).</description>
   <maintainer email="technical.wanderer@gmail.com">Tom Le Huray</maintainer>
-  <license>MIT</license>
+  <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>rosidl_default_generators</buildtool_depend>
