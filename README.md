@@ -123,7 +123,9 @@ terra, where heavy compute belongs.
 
 ## License
 
-MIT
+Apache License 2.0: see `LICENSE` and `NOTICE`.
+
+Everything up to commit `06436b2` (4 July 2026), including the `core-v0.4`, `research-v0.1` and `ros-v0.1` tags, was published under the MIT licence, and copies of those stay under MIT.
 
 ## Author
 
